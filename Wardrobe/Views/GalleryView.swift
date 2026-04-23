@@ -17,6 +17,7 @@ enum GalleryViewMode {
 struct GalleryView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \ImageRecord.dateAdded, order: .reverse) private var allImages: [ImageRecord]
+    @Query(sort: \ImageCollection.dateCreated, order: .reverse) private var allCollections: [ImageCollection]
     
     @State private var searchQuery = ""
     @State private var searchResults: [SearchService.SearchResult] = []
@@ -249,16 +250,43 @@ struct GalleryView: View {
                         selectedImage = image
                     }
                     .contextMenu {
-                        Button(role: .destructive) {
-                            deleteImage(image)
+                        Button {
+                            QuickLookPreviewer.shared.preview(urls: [image.fileURL])
                         } label: {
-                            Label("Delete", systemImage: "trash")
+                            Label("Quick Look", systemImage: "eye")
                         }
+                        .keyboardShortcut(.space, modifiers: [])
                         
                         Button {
                             NSWorkspace.shared.activateFileViewerSelecting([image.fileURL])
                         } label: {
                             Label("Show in Finder", systemImage: "folder")
+                        }
+                        
+                        if !allCollections.isEmpty {
+                            Menu {
+                                ForEach(allCollections) { collection in
+                                    let isMember = collection.images.contains { $0.id == image.id }
+                                    Button {
+                                        toggleMembership(image: image, collection: collection)
+                                    } label: {
+                                        Label(
+                                            collection.name,
+                                            systemImage: isMember ? "checkmark.circle.fill" : collection.iconName
+                                        )
+                                    }
+                                }
+                            } label: {
+                                Label("Add to Collection", systemImage: "folder.badge.plus")
+                            }
+                        }
+                        
+                        Divider()
+                        
+                        Button(role: .destructive) {
+                            deleteImage(image)
+                        } label: {
+                            Label("Delete", systemImage: "trash")
                         }
                     }
                 }
@@ -359,14 +387,17 @@ struct GalleryView: View {
                 if provider.hasItemConformingToTypeIdentifier(UTType.image.identifier) {
                     do {
                         let fileURL = try await StorageManager.shared.saveImage(from: provider)
-                        let (extractedText, embedding) = try await ProcessingService.shared.processImage(at: fileURL)
+                        let (extractedText, embedding, detectedURLs, smartTags, featurePrint) = try await ProcessingService.shared.processImage(at: fileURL)
                         
                         await MainActor.run {
                             let record = ImageRecord(
                                 filename: fileURL.lastPathComponent,
                                 fileURL: fileURL,
                                 extractedText: extractedText.isEmpty ? nil : extractedText,
-                                textEmbedding: embedding
+                                textEmbedding: embedding,
+                                detectedURLs: detectedURLs,
+                                smartTags: smartTags,
+                                featurePrintData: featurePrint
                             )
                             modelContext.insert(record)
                             try? modelContext.save()
@@ -387,6 +418,15 @@ struct GalleryView: View {
                 }
             }
         }
+    }
+    
+    private func toggleMembership(image: ImageRecord, collection: ImageCollection) {
+        if collection.images.contains(where: { $0.id == image.id }) {
+            collection.images.removeAll { $0.id == image.id }
+        } else {
+            collection.images.append(image)
+        }
+        try? modelContext.save()
     }
     
     private func deleteImage(_ image: ImageRecord) {

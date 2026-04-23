@@ -19,10 +19,16 @@ struct ImageCardView: View {
         ZStack(alignment: .topTrailing) {
             thumbnailView
             
-            if let similarity = similarity {
-                similarityBadge(similarity)
-                    .padding(8)
+            HStack(spacing: 6) {
+                if isHovered {
+                    quickLookButton
+                        .transition(.opacity)
+                }
+                if let similarity = similarity {
+                    similarityBadge(similarity)
+                }
             }
+            .padding(8)
         }
         .onAppear(perform: loadImage)
         .onHover { hovering in
@@ -30,6 +36,40 @@ struct ImageCardView: View {
                 isHovered = hovering
             }
         }
+    }
+
+    private var tagIndicator: some View {
+        HStack(spacing: 3) {
+            Image(systemName: "tag.fill")
+                .font(.system(size: 8, weight: .bold))
+            Text("\(record.customTags.count)")
+                .font(.system(size: 10, weight: .bold))
+        }
+        .foregroundStyle(.white)
+        .padding(.horizontal, 6)
+        .padding(.vertical, 3)
+        .background(
+            Capsule()
+                .fill(Color.orange.opacity(0.85))
+        )
+    }
+    
+    private var quickLookButton: some View {
+        Button {
+            QuickLookPreviewer.shared.preview(urls: [record.fileURL])
+        } label: {
+            Image(systemName: "eye")
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 3)
+                .background(
+                    Capsule()
+                        .fill(Color.black.opacity(0.55))
+                )
+        }
+        .buttonStyle(.plain)
+        .help("Quick Look (Space)")
     }
     
     private var thumbnailView: some View {
@@ -55,7 +95,7 @@ struct ImageCardView: View {
                 if isHovered {
                     VStack {
                         Spacer()
-                        HStack {
+                        HStack(alignment: .bottom, spacing: 6) {
                             Text(timeAgoString(from: record.dateAdded))
                                 .font(.system(size: 11, weight: .medium))
                                 .foregroundStyle(.white)
@@ -66,6 +106,18 @@ struct ImageCardView: View {
                                         .fill(Color.black.opacity(0.7))
                                 )
                             Spacer()
+                            if !record.customTags.isEmpty {
+                                tagIndicator
+                            }
+                        }
+                        .padding(8)
+                    }
+                } else if !record.customTags.isEmpty {
+                    VStack {
+                        Spacer()
+                        HStack {
+                            Spacer()
+                            tagIndicator
                         }
                         .padding(8)
                     }

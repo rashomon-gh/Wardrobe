@@ -17,7 +17,7 @@ struct WardrobeApp: App {
     
     init() {
         do {
-            let schema = Schema([ImageRecord.self])
+            let schema = Schema([ImageRecord.self, ImageCollection.self])
             modelContainer = try ModelContainer(for: schema, configurations: [])
         } catch {
             fatalError("Failed to initialize SwiftData container: \(error)")
