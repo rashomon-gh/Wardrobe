@@ -24,23 +24,33 @@ This document provides comprehensive guidance for coding agents working on the W
 
 ## Project Structure
 
-```
+```text
 Wardrobe/
 ├── Models/
+│   ├── ImageCollection.swift      # SwiftData model for custom user collections
 │   ├── ImageRecord.swift          # SwiftData model for image metadata
-│   └── Navigation.swift           # Navigation section enums
+│   ├── Navigation.swift           # Navigation section enums
+│   └── SmartCollection.swift      # Enums for time-based automatic collections
 ├── Services/
-│   ├── StorageManager.swift       # File operations and image storage (actor)
+│   ├── DuplicateFinderService.swift # Service to find and manage duplicate images
 │   ├── ProcessingService.swift    # OCR and embedding generation (actor)
-│   └── SearchService.swift        # Semantic search with cosine similarity (actor)
+│   ├── SearchService.swift        # Semantic search with cosine similarity (actor)
+│   ├── SpaceSaverService.swift    # Service to analyze and manage disk usage
+│   └── StorageManager.swift       # File operations and image storage (actor)
 ├── Views/
+│   ├── CollectionsView.swift      # View to display custom collections
+│   ├── DropZoneView.swift         # Drag-and-drop area
+│   ├── DuplicateFinderView.swift  # View for managing duplicate screenshots
+│   ├── GalleryView.swift          # Main gallery with search and grid
+│   ├── ImageCardView.swift        # Individual image card
+│   ├── ImageDetailView.swift      # Detailed view for a single image
 │   ├── MainContentView.swift      # Main app window with sidebar
 │   ├── MenuBarPopoverView.swift   # Menubar popup interface
-│   ├── GalleryView.swift          # Main gallery with search and grid
+│   ├── QuickLinksView.swift       # View for organizing important links
+│   ├── ReOrganizerView.swift      # View for auto-organizing screenshots with AI
 │   ├── SearchBarView.swift        # Search input components
-│   ├── DropZoneView.swift         # Drag-and-drop area
-│   ├── ImageCardView.swift        # Individual image card
-│   └── SidebarView.swift          # Navigation sidebar
+│   ├── SidebarView.swift          # Navigation sidebar
+│   └── SpaceSaverView.swift       # View for disk space management
 ├── Extensions/
 │   └── QuickLookExtension.swift   # Image preview functionality
 └── WardrobeApp.swift              # App entry point
@@ -372,9 +382,9 @@ xcodebuild -project Wardrobe.xcodeproj -scheme Wardrobe build
 - Monitor embedding generation time
 - Profile search queries
 
-## Future Enhancements (Not Yet Implemented)
+## Recently Implemented Features
 
-The following features are planned but not yet implemented. When working on these, follow existing patterns:
+The following features have been successfully integrated into the app following the established patterns. When modifying or extending these, maintain the existing conventions:
 
 - **Collections**: Organize screenshots into custom folders
 - **Quick Links**: Save and organize important links
