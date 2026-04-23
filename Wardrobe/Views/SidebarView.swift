@@ -33,10 +33,6 @@ struct SidebarView: View {
             }
             
             Spacer()
-            
-            Divider()
-            
-            settingsButton
         }
         .background(Color(nsColor: .controlBackgroundColor).opacity(0.5))
     }
@@ -103,27 +99,6 @@ struct SidebarView: View {
                     .fill(selectedSection == section ? Color.white.opacity(0.08) : Color.clear)
             )
             .padding(.horizontal, 8)
-        }
-        .buttonStyle(.plain)
-    }
-    
-    private var settingsButton: some View {
-        Button {
-            // Settings action
-        } label: {
-            HStack(spacing: 12) {
-                Image(systemName: "gearshape")
-                    .font(.system(size: 14))
-                    .frame(width: 20)
-                
-                Text("Settings")
-                    .font(.system(size: 13, weight: .medium))
-                
-                Spacer()
-            }
-            .foregroundStyle(.secondary)
-            .padding(.horizontal, 20)
-            .padding(.vertical, 12)
         }
         .buttonStyle(.plain)
     }
