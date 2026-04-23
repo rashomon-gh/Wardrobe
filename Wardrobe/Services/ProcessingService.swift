@@ -35,13 +35,14 @@ actor ProcessingService {
         self.embedding = model
     }
     
-    func processImage(at url: URL) async throws -> (text: String, embedding: [Double]?, urls: [String], smartTags: [String], featurePrint: Data?) {
+    func processImage(at url: URL) async throws -> (text: String, embedding: [Double]?, urls: [String], smartTags: [String], featurePrint: Data?, entities: [ExtractedEntity]) {
         let extractedText = try await performOCR(at: url)
         let textEmbedding = try? await generateEmbedding(for: extractedText)
         let urls = Self.detectURLs(in: extractedText)
         let smartTags = (try? await classifyImage(at: url)) ?? []
         let featurePrint = try? await generateFeaturePrint(at: url)
-        return (extractedText, textEmbedding, urls, smartTags, featurePrint)
+        let entities = Self.extractEntities(from: extractedText)
+        return (extractedText, textEmbedding, urls, smartTags, featurePrint, entities)
     }
     
     func generateFeaturePrint(at url: URL) async throws -> Data? {
@@ -143,6 +144,63 @@ actor ProcessingService {
             }
         }
         return urls
+    }
+    
+    static func extractEntities(from text: String) -> [ExtractedEntity] {
+        var entities: [ExtractedEntity] = []
+        
+        let tagger = NLTagger(tagSchemes: [.nameType])
+        tagger.string = text
+        let options: NLTagger.Options = [.omitWhitespace, .omitPunctuation, .joinNames]
+        tagger.enumerateTags(in: text.startIndex..<text.endIndex, unit: .word, scheme: .nameType, options: options) { tag, tokenRange in
+            if let tag = tag, let category = mapNLTaggerTagToCategory(tag) {
+                let value = String(text[tokenRange])
+                entities.append(ExtractedEntity(category: category, value: value))
+            }
+            return true
+        }
+        
+        let types: NSTextCheckingResult.CheckingType = [.date, .phoneNumber, .transitInformation]
+        if let detector = try? NSDataDetector(types: types.rawValue) {
+            let matches = detector.matches(in: text, options: [], range: NSRange(location: 0, length: text.utf16.count))
+            for match in matches {
+                guard let range = Range(match.range, in: text) else { continue }
+                let value = String(text[range])
+                
+                if match.resultType == .date, match.date != nil {
+                    entities.append(ExtractedEntity(category: "Date", value: value))
+                } else if match.resultType == .phoneNumber {
+                    if value.filter({ $0.isNumber }).count >= 10 {
+                        entities.append(ExtractedEntity(category: "Tracking/Phone", value: value))
+                    } else {
+                        entities.append(ExtractedEntity(category: "Phone", value: value))
+                    }
+                } else if match.resultType == .transitInformation {
+                    entities.append(ExtractedEntity(category: "Transit Info", value: value))
+                }
+            }
+        }
+        
+        var uniqueEntities: [ExtractedEntity] = []
+        var seen = Set<String>()
+        for entity in entities {
+            let key = "\(entity.category):\(entity.value)"
+            if !seen.contains(key) {
+                seen.insert(key)
+                uniqueEntities.append(entity)
+            }
+        }
+        
+        return uniqueEntities
+    }
+    
+    private static func mapNLTaggerTagToCategory(_ tag: NLTag) -> String? {
+        switch tag {
+        case .organizationName: return "Organization"
+        case .personalName: return "Person"
+        case .placeName: return "Place"
+        default: return nil
+        }
     }
     
     private func performOCR(at url: URL) async throws -> String {

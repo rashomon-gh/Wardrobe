@@ -149,6 +149,10 @@ struct ImageDetailView: View {
                     detectedLinksSection
                 }
                 
+                if !image.extractedEntities.isEmpty {
+                    extractedEntitiesSection
+                }
+                
                 if let text = image.extractedText, !text.isEmpty {
                     extractedTextSection(text)
                 }
@@ -390,6 +394,50 @@ struct ImageDetailView: View {
                     .help(link)
                 }
             }
+        }
+    }
+    
+    private var extractedEntitiesSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 6) {
+                Image(systemName: "person.text.rectangle")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(Color.indigo)
+                sectionHeader("Extracted Entities")
+            }
+            
+            FlowLayout(spacing: 6) {
+                ForEach(image.extractedEntities) { entity in
+                    HStack(spacing: 4) {
+                        Image(systemName: iconForEntityCategory(entity.category))
+                            .font(.system(size: 9))
+                        Text(entity.category + ":")
+                            .font(.system(size: 10, weight: .bold))
+                        Text(entity.value)
+                            .font(.system(size: 10))
+                    }
+                    .foregroundStyle(Color.indigo)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        Capsule()
+                            .fill(Color.indigo.opacity(0.12))
+                    )
+                }
+            }
+        }
+    }
+    
+    private func iconForEntityCategory(_ category: String) -> String {
+        switch category {
+        case "Organization": return "building.2"
+        case "Person": return "person.fill"
+        case "Place": return "mappin.and.ellipse"
+        case "Date": return "calendar"
+        case "Phone": return "phone.fill"
+        case "Tracking/Phone": return "shippingbox.fill"
+        case "Transit Info": return "airplane"
+        default: return "tag.fill"
         }
     }
     

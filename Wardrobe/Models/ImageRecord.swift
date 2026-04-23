@@ -21,6 +21,7 @@ final class ImageRecord {
     var detectedURLs: [String] = []
     var smartTags: [String] = []
     var featurePrintData: Data?
+    var extractedEntities: [ExtractedEntity] = []
     
     init(
         id: UUID = UUID(),
@@ -33,7 +34,8 @@ final class ImageRecord {
         notes: String? = nil,
         detectedURLs: [String] = [],
         smartTags: [String] = [],
-        featurePrintData: Data? = nil
+        featurePrintData: Data? = nil,
+        extractedEntities: [ExtractedEntity] = []
     ) {
         self.id = id
         self.filename = filename
@@ -46,5 +48,6 @@ final class ImageRecord {
         self.detectedURLs = detectedURLs
         self.smartTags = smartTags
         self.featurePrintData = featurePrintData
+        self.extractedEntities = extractedEntities
     }
 }

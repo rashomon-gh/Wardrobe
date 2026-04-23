@@ -387,7 +387,7 @@ struct GalleryView: View {
                 if provider.hasItemConformingToTypeIdentifier(UTType.image.identifier) {
                     do {
                         let fileURL = try await StorageManager.shared.saveImage(from: provider)
-                        let (extractedText, embedding, detectedURLs, smartTags, featurePrint) = try await ProcessingService.shared.processImage(at: fileURL)
+                        let (extractedText, embedding, detectedURLs, smartTags, featurePrint, entities) = try await ProcessingService.shared.processImage(at: fileURL)
                         
                         await MainActor.run {
                             let record = ImageRecord(
@@ -397,7 +397,8 @@ struct GalleryView: View {
                                 textEmbedding: embedding,
                                 detectedURLs: detectedURLs,
                                 smartTags: smartTags,
-                                featurePrintData: featurePrint
+                                featurePrintData: featurePrint,
+                                extractedEntities: entities
                             )
                             modelContext.insert(record)
                             try? modelContext.save()
