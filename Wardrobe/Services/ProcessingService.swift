@@ -35,10 +35,114 @@ actor ProcessingService {
         self.embedding = model
     }
     
-    func processImage(at url: URL) async throws -> (text: String, embedding: [Double]?) {
+    func processImage(at url: URL) async throws -> (text: String, embedding: [Double]?, urls: [String], smartTags: [String], featurePrint: Data?) {
         let extractedText = try await performOCR(at: url)
         let textEmbedding = try? await generateEmbedding(for: extractedText)
-        return (extractedText, textEmbedding)
+        let urls = Self.detectURLs(in: extractedText)
+        let smartTags = (try? await classifyImage(at: url)) ?? []
+        let featurePrint = try? await generateFeaturePrint(at: url)
+        return (extractedText, textEmbedding, urls, smartTags, featurePrint)
+    }
+    
+    func generateFeaturePrint(at url: URL) async throws -> Data? {
+        try await withCheckedThrowingContinuation { continuation in
+            let request = VNGenerateImageFeaturePrintRequest { request, error in
+                if let error = error {
+                    continuation.resume(throwing: ProcessingError.featurePrintFailed(error))
+                    return
+                }
+                
+                guard let observation = (request.results as? [VNFeaturePrintObservation])?.first else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                
+                do {
+                    let data = try NSKeyedArchiver.archivedData(withRootObject: observation, requiringSecureCoding: true)
+                    continuation.resume(returning: data)
+                } catch {
+                    continuation.resume(throwing: ProcessingError.featurePrintFailed(error))
+                }
+            }
+            
+            Task.detached(priority: .userInitiated) {
+                do {
+                    let handler = VNImageRequestHandler(url: url)
+                    try handler.perform([request])
+                } catch {
+                    continuation.resume(throwing: ProcessingError.featurePrintFailed(error))
+                }
+            }
+        }
+    }
+    
+    nonisolated static func decodeFeaturePrint(_ data: Data) -> VNFeaturePrintObservation? {
+        try? NSKeyedUnarchiver.unarchivedObject(ofClass: VNFeaturePrintObservation.self, from: data)
+    }
+    
+    func classifyImage(at url: URL, maxTags: Int = 6, minConfidence: Float = 0.3) async throws -> [String] {
+        try await withCheckedThrowingContinuation { continuation in
+            let request = VNClassifyImageRequest { request, error in
+                if let error = error {
+                    continuation.resume(throwing: ProcessingError.classificationFailed(error))
+                    return
+                }
+                
+                guard let observations = request.results as? [VNClassificationObservation] else {
+                    continuation.resume(returning: [])
+                    return
+                }
+                
+                let tags = observations
+                    .filter { $0.confidence >= minConfidence }
+                    .prefix(maxTags)
+                    .map { Self.formatTag($0.identifier) }
+                
+                continuation.resume(returning: Array(tags))
+            }
+            
+            Task.detached(priority: .userInitiated) {
+                do {
+                    let handler = VNImageRequestHandler(url: url)
+                    try handler.perform([request])
+                } catch {
+                    continuation.resume(throwing: ProcessingError.classificationFailed(error))
+                }
+            }
+        }
+    }
+    
+    private static func formatTag(_ identifier: String) -> String {
+        identifier
+            .replacingOccurrences(of: "_", with: " ")
+            .split(separator: " ")
+            .map { $0.prefix(1).capitalized + $0.dropFirst() }
+            .joined(separator: " ")
+    }
+    
+    static func detectURLs(in text: String) -> [String] {
+        guard !text.isEmpty else { return [] }
+        
+        guard let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue) else {
+            return []
+        }
+        
+        let range = NSRange(text.startIndex..<text.endIndex, in: text)
+        let matches = detector.matches(in: text, options: [], range: range)
+        
+        var seen: Set<String> = []
+        var urls: [String] = []
+        for match in matches {
+            guard let url = match.url else { continue }
+            // Drop mailto/tel, keep real web-style URLs
+            guard let scheme = url.scheme?.lowercased(),
+                  scheme == "http" || scheme == "https" else { continue }
+            let absolute = url.absoluteString
+            if seen.insert(absolute).inserted {
+                urls.append(absolute)
+            }
+        }
+        return urls
     }
     
     private func performOCR(at url: URL) async throws -> String {
@@ -104,6 +208,8 @@ enum ProcessingError: Error, LocalizedError {
     case ocrFailed(Error)
     case embeddingNotAvailable
     case embeddingFailed(Error)
+    case classificationFailed(Error)
+    case featurePrintFailed(Error)
     case unknown
     
     var errorDescription: String? {
@@ -114,6 +220,10 @@ enum ProcessingError: Error, LocalizedError {
             return "Embedding model is not available"
         case .embeddingFailed(let error):
             return "Failed to generate embedding: \(error.localizedDescription)"
+        case .classificationFailed(let error):
+            return "Image classification failed: \(error.localizedDescription)"
+        case .featurePrintFailed(let error):
+            return "Feature print generation failed: \(error.localizedDescription)"
         case .unknown:
             return "An unknown processing error occurred"
         }

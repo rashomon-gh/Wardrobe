@@ -30,15 +30,15 @@ struct MainContentView: View {
         case .screenshots:
             GalleryView()
         case .collections:
-            PlaceholderView(title: "Collections", icon: "folder", message: "Organize your screenshots into custom collections")
+            CollectionsView()
         case .quickLinks:
-            PlaceholderView(title: "Quick Links", icon: "link", message: "Save and organize your important links")
+            QuickLinksView()
         case .reOrganizer:
-            PlaceholderView(title: "Re-Organizer", icon: "arrow.triangle.2.circlepath", message: "Auto-organize your screenshots with AI")
+            ReOrganizerView()
         case .spaceSaver:
-            PlaceholderView(title: "Space Saver", icon: "internaldrive", message: "Free up disk space by managing screenshots")
+            SpaceSaverView()
         case .duplicateFinder:
-            PlaceholderView(title: "Duplicate Finder", icon: "doc.on.doc", message: "Find and remove duplicate screenshots")
+            DuplicateFinderView()
         }
     }
 }

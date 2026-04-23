@@ -239,14 +239,17 @@ struct MenuBarPopoverView: View {
                 if provider.hasItemConformingToTypeIdentifier(UTType.image.identifier) {
                     do {
                         let fileURL = try await StorageManager.shared.saveImage(from: provider)
-                        let (extractedText, embedding) = try await ProcessingService.shared.processImage(at: fileURL)
+                        let (extractedText, embedding, detectedURLs, smartTags, featurePrint) = try await ProcessingService.shared.processImage(at: fileURL)
                         
                         await MainActor.run {
                             let record = ImageRecord(
                                 filename: fileURL.lastPathComponent,
                                 fileURL: fileURL,
                                 extractedText: extractedText.isEmpty ? nil : extractedText,
-                                textEmbedding: embedding
+                                textEmbedding: embedding,
+                                detectedURLs: detectedURLs,
+                                smartTags: smartTags,
+                                featurePrintData: featurePrint
                             )
                             modelContext.insert(record)
                             try? modelContext.save()
