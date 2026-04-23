@@ -2,6 +2,10 @@
 
 A privacy-first, local macOS menubar application that organizes and searches screenshots using Optical Character Recognition (OCR) and semantic embeddings. All processing happens on-device with zero external API calls.
 
+## Screenshot
+
+![Wardrobe Main Window](images/main_window.png)
+
 ## Features
 
 - **Drag & Drop Integration**: Simply drag screenshots into the menubar app to organize them
