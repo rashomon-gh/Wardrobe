@@ -89,6 +89,3 @@ A privacy-first, local macOS menubar application that organizes and searches scr
 - No internet connection required for processing
 - Images stored in standard Documents directory
 
-## License
-
-Created by Shawon Ashraf
