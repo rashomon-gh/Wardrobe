@@ -391,6 +391,8 @@ The following features have been successfully integrated into the app following 
 - **Re-Organizer**: Auto-organize screenshots with AI
 - **Space Saver**: Manage disk space usage
 - **Duplicate Finder**: Find and remove duplicate screenshots
+- **Entity Extraction**: Uses `NLTagger` and `NSDataDetector` to extract semantic entities (Dates, Organizations, Tracking numbers)
+- **Layout-aware OCR**: Preserves original column layout of extracted text from images
 
 ## Contribution Guidelines
 

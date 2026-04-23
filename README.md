@@ -5,8 +5,9 @@ A privacy-first, local macOS menubar application that organizes and searches scr
 ## Features
 
 - **Drag & Drop Integration**: Simply drag screenshots into the menubar app to organize them
-- **OCR Processing**: Automatically extracts text from images using Apple's Vision framework
+- **OCR Processing**: Automatically extracts text from images using Apple's Vision framework while preserving columnar layouts
 - **Semantic Search**: Natural language search powered by Apple's NaturalLanguage framework
+- **Entity Extraction**: Automatically identifies and structures key information like dates, organizations, and tracking numbers
 - **Privacy-First**: All data stored locally, no cloud processing
 - **Quick Look Preview**: Click on images to preview them in full size
 
@@ -26,15 +27,15 @@ A privacy-first, local macOS menubar application that organizes and searches scr
 1. **Ingestion**: User drags images into the menubar drop zone
 2. **Storage**: Images are saved to `~/Documents/Wardrobe/Images/`
 3. **Processing**: 
-   - Vision framework extracts text from images
-   - NaturalLanguage framework generates semantic embeddings
-4. **Persistence**: Metadata, OCR text, and embeddings stored in SwiftData
+   - Vision framework extracts and structures text from images based on their visual layout
+   - NaturalLanguage framework generates semantic embeddings and performs Entity Recognition (Organizations, People, Dates, etc.)
+4. **Persistence**: Metadata, structured OCR text, extracted entities, and embeddings stored in SwiftData
 5. **Retrieval**: Search queries are vectorized and compared using cosine similarity
 
 ### Core Components
 
 #### Models
-- `ImageRecord`: SwiftData model storing image metadata, OCR text, and embeddings
+- `ImageRecord`: SwiftData model storing image metadata, OCR text, extracted entities, and embeddings
 
 #### Services
 - `StorageManager`: Handles file operations and image storage
