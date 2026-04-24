@@ -1,5 +1,7 @@
 # Wardrobe - macOS Semantic Screenshot Organizer
 
+[![Build](https://github.com/rashomon-gh/Wardrobe/actions/workflows/build.yml/badge.svg)](https://github.com/rashomon-gh/Wardrobe/actions/workflows/build.yml) [![Release](https://github.com/rashomon-gh/Wardrobe/actions/workflows/release.yml/badge.svg)](https://github.com/rashomon-gh/Wardrobe/actions/workflows/release.yml)
+
 A privacy-first, local macOS menubar application that organizes and searches screenshots using Optical Character Recognition (OCR) and semantic embeddings. All processing happens on-device with zero external API calls.
 
 ## Screenshot
@@ -71,12 +73,11 @@ A privacy-first, local macOS menubar application that organizes and searches scr
 
 ## Installation
 
-1. Clone the repository
-2. Open `Wardrobe.xcodeproj` in Xcode
-3. Build and run (⌘R)
+```bash
+brew tap rashomon-gh/tap
+brew install --cask wardrobe
+```
 
-## Automated Releases
-The project uses GitHub Actions for Continuous Deployment. Whenever a new Git tag (e.g., `v1.0.0`) is pushed, a workflow will automatically compile the application and publish a new GitHub Release with the bundled `Wardrobe.zip`.
 
 ## Requirements
 
