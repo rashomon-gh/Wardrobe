@@ -8,20 +8,38 @@
 import Foundation
 import Vision
 
+/// A background actor responsible for identifying visually identical or highly similar images.
+///
+/// `DuplicateFinderService` utilizes Apple's `Vision` framework to compare `VNFeaturePrintObservation`
+/// binary data stored in `ImageRecord` objects. It groups duplicates using a Union-Find clustering algorithm
+/// based on Euclidean distance thresholds.
 actor DuplicateFinderService {
+    /// The shared singleton instance.
     static let shared = DuplicateFinderService()
     
     private init() {}
     
+    /// A model representing a cluster of visually similar images.
     struct DuplicateGroup: Identifiable {
         let id = UUID()
-        /// Records sorted by preference - the first one is treated as the "keeper".
+        /// Images sorted by preservation preference. The first element is the highest-quality
+        /// or most recently added "keeper" image. Subsequent elements are candidates for deletion.
         let records: [ImageRecord]
-        /// Max distance found among pairs in this group. Lower = more similar.
+        /// The maximum Euclidean distance found among pairs in this specific cluster.
+        /// Lower values indicate higher visual similarity.
         let maxDistance: Float
     }
     
-    /// Find groups of visually similar images. Threshold: 0..1, lower is stricter.
+    /// Analyzes a dataset of images and clusters them into groups of visual duplicates.
+    ///
+    /// The algorithm calculates the geometric distance between `featurePrintData` vectors.
+    /// It then applies a Union-Find clustering technique to group images that fall below the distance threshold.
+    ///
+    /// - Parameters:
+    ///   - records: The dataset of `ImageRecord`s to analyze.
+    ///   - threshold: The maximum allowed distance between feature prints to be considered a duplicate.
+    ///                (Defaults to 0.18, where 0.0 is an exact pixel-perfect match).
+    /// - Returns: An array of `DuplicateGroup` clusters, sorted by cluster size.
     func findDuplicateGroups(
         records: [ImageRecord],
         threshold: Float = 0.18
@@ -102,6 +120,10 @@ actor DuplicateFinderService {
             .sorted { $0.records.count > $1.records.count }
     }
     
+    /// Helper function to retrieve the physical file size on disk.
+    ///
+    /// - Parameter url: The absolute file URL.
+    /// - Returns: The size of the file in bytes.
     nonisolated private func fileSize(for url: URL) -> Int64 {
         (try? FileManager.default.attributesOfItem(atPath: url.path))
             .flatMap { $0[.size] as? Int64 } ?? 0

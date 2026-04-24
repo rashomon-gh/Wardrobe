@@ -10,7 +10,13 @@ import SwiftData
 import NaturalLanguage
 import Accelerate
 
+/// A background actor responsible for executing semantic searches across the image database.
+///
+/// `SearchService` utilizes Apple's `NaturalLanguage` framework to convert text queries
+/// into numerical embeddings, and then performs cosine similarity math against the embeddings
+/// stored in `ImageRecord` objects to find the most relevant matches.
 actor SearchService {
+    /// The shared singleton instance of the search service.
     static let shared = SearchService()
     
     private var embedding: NLEmbedding?
@@ -18,6 +24,10 @@ actor SearchService {
     
     private init() {}
     
+    /// Initializes the natural language embedding model asynchronously.
+    ///
+    /// This should be called early in the app lifecycle to ensure the model
+    /// is loaded into memory before the user initiates a search.
     func initialize() {
         guard !isInitialized else { return }
         isInitialized = true
@@ -36,11 +46,22 @@ actor SearchService {
         self.embedding = model
     }
     
+    /// A structure representing a matched search result along with its relevancy score.
     struct SearchResult {
+        /// The matched image record.
         let record: ImageRecord
+        /// The cosine similarity score (1.0 = perfect match, 0.0 = completely unrelated).
         let similarity: Double
     }
     
+    /// Executes a semantic search query against the provided context.
+    ///
+    /// - Parameters:
+    ///   - query: The raw text string the user is searching for.
+    ///   - modelContext: The SwiftData context used to fetch existing `ImageRecord`s.
+    ///   - limit: The maximum number of results to return (defaults to 20).
+    /// - Returns: An array of `SearchResult`, sorted by highest similarity first.
+    /// - Throws: `SearchError` if the embedding model is unavailable or the query is invalid.
     func search(query: String, in modelContext: ModelContext, limit: Int = 20) async throws -> [SearchResult] {
         guard let embedding = embedding else {
             throw SearchError.embeddingNotAvailable
@@ -75,6 +96,12 @@ actor SearchService {
             .map { $0 }
     }
     
+    /// Calculates the cosine similarity between two numerical vectors.
+    ///
+    /// - Parameters:
+    ///   - query: The vectorized search query.
+    ///   - vector: The pre-calculated vector for an `ImageRecord`.
+    /// - Returns: A double between 0.0 and 1.0 representing mathematical similarity.
     private func cosineSimilarity(query: [Double], vector: [Double]) -> Double {
         guard query.count == vector.count, !query.isEmpty else {
             return 0.0
@@ -100,9 +127,13 @@ actor SearchService {
     }
 }
 
+/// An enumeration of errors that can occur during the search process.
 enum SearchError: Error, LocalizedError {
+    /// Thrown when the `NLEmbedding` model fails to initialize or is not yet loaded.
     case embeddingNotAvailable
+    /// Thrown when the search query cannot be successfully vectorized.
     case invalidQuery
+    /// An unknown or unexpected error occurred.
     case unknown
     
     var errorDescription: String? {

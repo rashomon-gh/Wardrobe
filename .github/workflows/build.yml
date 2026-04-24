@@ -13,5 +13,5 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       
-    - name: Build
-      run: xcodebuild -project Wardrobe.xcodeproj -scheme Wardrobe build CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+    - name: Build and Test
+      run: xcodebuild test -project Wardrobe.xcodeproj -scheme Wardrobe -destination 'platform=macOS' CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
