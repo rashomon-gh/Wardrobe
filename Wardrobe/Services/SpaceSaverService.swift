@@ -8,10 +8,14 @@
 import Foundation
 import AppKit
 
+/// The visual quality and size reduction target for the Space Saver compression engine.
 nonisolated enum CompressionLevel: String, CaseIterable, Identifiable, Sendable {
-    case high       // minimal quality loss
+    /// Minimal quality loss. Target size reduction is ~30%.
+    case high
+    /// Noticeable size reduction while retaining good quality. Target size reduction is ~50%.
     case balanced
-    case max        // most aggressive
+    /// Most aggressive compression algorithm. Target size reduction is ~70%.
+    case max
     
     var id: String { rawValue }
     
@@ -48,7 +52,10 @@ nonisolated enum CompressionLevel: String, CaseIterable, Identifiable, Sendable 
     }
 }
 
+/// A background actor responsible for identifying large images and aggressively compressing them
+/// into JPEG format to save local disk space.
 actor SpaceSaverService {
+    /// The shared singleton instance.
     static let shared = SpaceSaverService()
     
     private init() {}
@@ -59,13 +66,27 @@ actor SpaceSaverService {
         case jpegEncodingFailed
     }
     
+    /// The result of a successful compression operation.
     struct CompressionResult {
+        /// The new absolute URL of the generated `.jpg` file.
         let newURL: URL
+        /// The physical disk footprint of the original file in bytes.
         let oldBytes: Int64
+        /// The physical disk footprint of the newly compressed file in bytes.
         let newBytes: Int64
         var saved: Int64 { oldBytes - newBytes }
     }
     
+    /// Analyzes an image on disk and attempts to rewrite it using lossy JPEG compression.
+    ///
+    /// If the newly generated JPEG is larger than the original uncompressed file, the operation
+    /// is discarded and the original file is kept to ensure no disk space is wasted.
+    ///
+    /// - Parameters:
+    ///   - url: The physical file URL of the original image (usually PNG/TIFF).
+    ///   - level: The targeted lossy compression setting.
+    /// - Returns: A `CompressionResult` indicating how many bytes were saved and the new file URL.
+    /// - Throws: `SpaceSaverError` if the bitmap cannot be generated or saved.
     func compress(url: URL, level: CompressionLevel) async throws -> CompressionResult {
         let oldBytes = Self.fileSize(at: url)
         

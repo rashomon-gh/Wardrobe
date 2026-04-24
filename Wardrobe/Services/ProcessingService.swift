@@ -9,7 +9,13 @@ import Foundation
 import NaturalLanguage
 import Vision
 
+/// A background actor responsible for orchestrating the machine learning and image analysis pipeline.
+///
+/// `ProcessingService` uses Apple's `Vision` and `NaturalLanguage` frameworks to extract text,
+/// generate vector embeddings, identify URLs, classify image scenes, create visual feature prints,
+/// and perform semantic entity extraction. All heavy lifting is offloaded to background tasks.
 actor ProcessingService {
+    /// The shared singleton instance of the processing service.
     static let shared = ProcessingService()
     
     private var embedding: NLEmbedding?
@@ -17,6 +23,10 @@ actor ProcessingService {
     
     private init() {}
     
+    /// Initializes the natural language embedding model asynchronously.
+    ///
+    /// This should be called early in the app lifecycle so the `NLEmbedding` model
+    /// is ready for processing new images.
     func initialize() {
         guard !isInitialized else { return }
         isInitialized = true
@@ -35,6 +45,17 @@ actor ProcessingService {
         self.embedding = model
     }
     
+    /// The master pipeline function that runs all extraction and classification algorithms on an image.
+    ///
+    /// - Parameter url: The file URL of the image to process.
+    /// - Returns: A tuple containing all extracted metadata:
+    ///   - `text`: The raw OCR text preserving structural layout.
+    ///   - `embedding`: The semantic vector representation of the text.
+    ///   - `urls`: A list of web-accessible HTTP/HTTPS URLs found in the text.
+    ///   - `smartTags`: Scene classifications (e.g., "Outdoors", "Receipt").
+    ///   - `featurePrint`: Visual binary data for duplicate detection.
+    ///   - `entities`: Semantic entities (dates, tracking numbers) parsed from the text.
+    /// - Throws: Any `ProcessingError` encountered during the ML pipeline.
     func processImage(at url: URL) async throws -> (text: String, embedding: [Double]?, urls: [String], smartTags: [String], featurePrint: Data?, entities: [ExtractedEntity]) {
         let extractedText = try await performOCR(at: url)
         let textEmbedding = try? await generateEmbedding(for: extractedText)
@@ -121,6 +142,10 @@ actor ProcessingService {
             .joined(separator: " ")
     }
     
+    /// Scans a text block for valid HTTP/HTTPS URLs.
+    ///
+    /// - Parameter text: The text to scan.
+    /// - Returns: An array of unique, fully formed URL strings.
     static func detectURLs(in text: String) -> [String] {
         guard !text.isEmpty else { return [] }
         
@@ -146,6 +171,12 @@ actor ProcessingService {
         return urls
     }
     
+    /// Extracts semantic entities (dates, organizations, tracking numbers) from raw text.
+    ///
+    /// This utilizes `NLTagger` for Named Entity Recognition (NER) and `NSDataDetector`
+    /// for pattern matching.
+    /// - Parameter text: The raw text string.
+    /// - Returns: An array of de-duplicated `ExtractedEntity` structs.
     static func extractEntities(from text: String) -> [ExtractedEntity] {
         var entities: [ExtractedEntity] = []
         
@@ -262,12 +293,19 @@ actor ProcessingService {
     }
 }
 
+/// An enumeration of errors that can occur during the image processing pipeline.
 enum ProcessingError: Error, LocalizedError {
+    /// Thrown when Vision OCR fails.
     case ocrFailed(Error)
+    /// Thrown when the embedding model is not yet loaded.
     case embeddingNotAvailable
+    /// Thrown when text cannot be converted into an embedding vector.
     case embeddingFailed(Error)
+    /// Thrown when scene classification fails.
     case classificationFailed(Error)
+    /// Thrown when visual feature print generation fails.
     case featurePrintFailed(Error)
+    /// An unknown processing error occurred.
     case unknown
     
     var errorDescription: String? {
