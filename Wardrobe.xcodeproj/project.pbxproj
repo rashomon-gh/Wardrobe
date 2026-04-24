@@ -6,11 +6,27 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXContainerItemProxy section */
+		03C5201A2F9B64AD00748341 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 03F488252F9A931300451566 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 03F4882C2F9A931300451566;
+			remoteInfo = Wardrobe;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
+		03C520162F9B64AD00748341 /* WardrobeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WardrobeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		03F4882D2F9A931300451566 /* Wardrobe.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Wardrobe.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		03C520172F9B64AD00748341 /* WardrobeTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = WardrobeTests;
+			sourceTree = "<group>";
+		};
 		03F4882F2F9A931300451566 /* Wardrobe */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Wardrobe;
@@ -19,6 +35,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		03C520132F9B64AD00748341 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		03F4882A2F9A931300451566 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -33,6 +56,7 @@
 			isa = PBXGroup;
 			children = (
 				03F4882F2F9A931300451566 /* Wardrobe */,
+				03C520172F9B64AD00748341 /* WardrobeTests */,
 				03F4882E2F9A931300451566 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +65,7 @@
 			isa = PBXGroup;
 			children = (
 				03F4882D2F9A931300451566 /* Wardrobe.app */,
+				03C520162F9B64AD00748341 /* WardrobeTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -48,6 +73,29 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		03C520152F9B64AD00748341 /* WardrobeTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 03C5201E2F9B64AD00748341 /* Build configuration list for PBXNativeTarget "WardrobeTests" */;
+			buildPhases = (
+				03C520122F9B64AD00748341 /* Sources */,
+				03C520132F9B64AD00748341 /* Frameworks */,
+				03C520142F9B64AD00748341 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				03C5201B2F9B64AD00748341 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				03C520172F9B64AD00748341 /* WardrobeTests */,
+			);
+			name = WardrobeTests;
+			packageProductDependencies = (
+			);
+			productName = WardrobeTests;
+			productReference = 03C520162F9B64AD00748341 /* WardrobeTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		03F4882C2F9A931300451566 /* Wardrobe */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 03F488382F9A931400451566 /* Build configuration list for PBXNativeTarget "Wardrobe" */;
@@ -80,6 +128,10 @@
 				LastSwiftUpdateCheck = 2640;
 				LastUpgradeCheck = 2640;
 				TargetAttributes = {
+					03C520152F9B64AD00748341 = {
+						CreatedOnToolsVersion = 26.4.1;
+						TestTargetID = 03F4882C2F9A931300451566;
+					};
 					03F4882C2F9A931300451566 = {
 						CreatedOnToolsVersion = 26.4.1;
 					};
@@ -100,11 +152,19 @@
 			projectRoot = "";
 			targets = (
 				03F4882C2F9A931300451566 /* Wardrobe */,
+				03C520152F9B64AD00748341 /* WardrobeTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		03C520142F9B64AD00748341 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		03F4882B2F9A931300451566 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -115,6 +175,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		03C520122F9B64AD00748341 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		03F488292F9A931300451566 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -124,7 +191,57 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		03C5201B2F9B64AD00748341 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 03F4882C2F9A931300451566 /* Wardrobe */;
+			targetProxy = 03C5201A2F9B64AD00748341 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		03C5201C2F9B64AD00748341 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = VF3Y7UU4D6;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.4;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.shawonashraf.WardrobeTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Wardrobe.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Wardrobe";
+			};
+			name = Debug;
+		};
+		03C5201D2F9B64AD00748341 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = VF3Y7UU4D6;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.4;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.shawonashraf.WardrobeTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Wardrobe.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Wardrobe";
+			};
+			name = Release;
+		};
 		03F488362F9A931400451566 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -314,6 +431,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		03C5201E2F9B64AD00748341 /* Build configuration list for PBXNativeTarget "WardrobeTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				03C5201C2F9B64AD00748341 /* Debug */,
+				03C5201D2F9B64AD00748341 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		03F488282F9A931300451566 /* Build configuration list for PBXProject "Wardrobe" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
