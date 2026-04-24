@@ -75,6 +75,9 @@ A privacy-first, local macOS menubar application that organizes and searches scr
 2. Open `Wardrobe.xcodeproj` in Xcode
 3. Build and run (⌘R)
 
+## Automated Releases
+The project uses GitHub Actions for Continuous Deployment. Whenever a new Git tag (e.g., `v1.0.0`) is pushed, a workflow will automatically compile the application and publish a new GitHub Release with the bundled `Wardrobe.zip`.
+
 ## Requirements
 
 - macOS 14.0 or later

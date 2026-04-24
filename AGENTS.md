@@ -342,14 +342,22 @@ private func loadImage() {
 - Use semantic colors and contrast ratios
 - Add `.help()` modifiers for tooltips
 
-## Build and Run
+## Build, Release, and Deployment
 
 ### Requirements
 - macOS 14.0 or later
-- Xcode 15.0 or later
+- Xcode 16.0 or later (Project format 77)
 - Swift 5.9+
 
-### Building
+### CI/CD Pipelines
+The project leverages GitHub Actions (`.github/workflows`) for automation:
+- **Build Action (`build.yml`)**: Compiles the `Wardrobe` scheme on `macos-15` runners for all pushes to `main`.
+- **Release Action (`release.yml`)**: Archives the `.app` using ad-hoc signing, zips it, and publishes a GitHub Release whenever a new version tag (e.g., `v1.0.0`) is pushed.
+
+### Homebrew Distribution
+A `wardrobe.rb` Homebrew Cask definition is included in the root directory. To circumvent macOS Gatekeeper quarantine restrictions on ad-hoc signed applications, it includes a `postflight` hook that executes `xattr -cr` automatically during installation.
+
+### Building Locally
 ```bash
 # Open in Xcode
 open Wardrobe.xcodeproj
