@@ -13,7 +13,7 @@ struct SidebarView: View {
     
     @Query private var allImages: [ImageRecord]
     
-    private let libraryItems: [NavigationSection] = [.screenshots, .collections, .quickLinks]
+    private let libraryItems: [NavigationSection] = [.screenshots, .collections, .quickLinks, .settings]
     private let toolItems: [NavigationSection] = [.reOrganizer, .spaceSaver, .duplicateFinder]
     
     var body: some View {

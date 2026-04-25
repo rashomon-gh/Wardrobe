@@ -525,9 +525,22 @@ struct GalleryView: View {
     }
     
     private func openImagesFolder() {
-        if let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
-            let appDirectory = documentsURL.appendingPathComponent("Wardrobe/Images")
+        guard let appDirectory = AppSettings.imageLibraryURL() else {
+            errorMessage = "Storage directory is not available."
+            showingError = true
+            return
+        }
+        
+        do {
+            try FileManager.default.createDirectory(
+                at: appDirectory,
+                withIntermediateDirectories: true,
+                attributes: nil
+            )
             NSWorkspace.shared.open(appDirectory)
+        } catch {
+            errorMessage = "Failed to open folder: \(error.localizedDescription)"
+            showingError = true
         }
     }
 }

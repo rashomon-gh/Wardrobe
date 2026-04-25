@@ -11,6 +11,7 @@ enum NavigationSection: String, CaseIterable, Identifiable {
     case screenshots = "Screenshots"
     case collections = "Collections"
     case quickLinks = "Quick Links"
+    case settings = "Settings"
     case reOrganizer = "Re-Organizer"
     case spaceSaver = "Space Saver"
     case duplicateFinder = "Duplicate Finder"
@@ -22,6 +23,7 @@ enum NavigationSection: String, CaseIterable, Identifiable {
         case .screenshots: return "photo.on.rectangle"
         case .collections: return "folder"
         case .quickLinks: return "link"
+        case .settings: return "gearshape"
         case .reOrganizer: return "arrow.triangle.2.circlepath"
         case .spaceSaver: return "internaldrive"
         case .duplicateFinder: return "doc.on.doc"
@@ -30,7 +32,7 @@ enum NavigationSection: String, CaseIterable, Identifiable {
     
     var category: NavigationCategory {
         switch self {
-        case .screenshots, .collections, .quickLinks:
+        case .screenshots, .collections, .quickLinks, .settings:
             return .library
         case .reOrganizer, .spaceSaver, .duplicateFinder:
             return .tools

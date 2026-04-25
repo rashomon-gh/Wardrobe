@@ -18,29 +18,11 @@ struct ImportedImage {
 /// A background actor responsible for safely managing the local file system.
 ///
 /// `StorageManager` ensures that images dropped into the app are safely copied
-/// to the user's `~/Documents/Wardrobe/Images` directory without blocking the main UI thread.
+/// to the configured image library directory without blocking the main UI thread.
 actor StorageManager {
     /// The shared singleton instance.
     static let shared = StorageManager()
-    
-    private lazy var imagesDirectory: URL? = {
-        guard let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
-            print("Error: Could not access Documents directory")
-            return nil
-        }
-        
-        let appDirectory = documentsURL.appendingPathComponent("Wardrobe/Images")
-        
-        do {
-            try FileManager.default.createDirectory(at: appDirectory, withIntermediateDirectories: true, attributes: nil)
-            print("Storage directory ready at: \(appDirectory.path)")
-            return appDirectory
-        } catch {
-            print("Error creating storage directory: \(error)")
-            return nil
-        }
-    }()
-    
+
     private init() {}
     
     /// Asynchronously copies an image from an `NSItemProvider` (e.g., from a Drag and Drop event)
@@ -50,9 +32,7 @@ actor StorageManager {
     /// - Returns: The absolute URL where the image was permanently saved.
     /// - Throws: `StorageError` if the directory is missing or the system fails to copy the file.
     func saveImage(from itemProvider: NSItemProvider) async throws -> URL {
-        guard let imagesDirectory else {
-            throw StorageError.directoryNotAvailable
-        }
+        let imagesDirectory = try resolveImageLibraryDirectory()
         
         let destinationURL = nextDestinationURL(in: imagesDirectory)
         
@@ -85,9 +65,7 @@ actor StorageManager {
     /// - Returns: The new absolute URL where the image was permanently saved.
     /// - Throws: `StorageError` if the directory is missing or the copy operation fails.
     func saveImage(from url: URL) throws -> URL {
-        guard let imagesDirectory else {
-            throw StorageError.directoryNotAvailable
-        }
+        let imagesDirectory = try resolveImageLibraryDirectory()
         
         let destinationURL = nextDestinationURL(in: imagesDirectory)
         try FileManager.default.copyItem(at: url, to: destinationURL)
@@ -101,9 +79,7 @@ actor StorageManager {
     /// - Returns: Imported image descriptors including copied file URL and source folder metadata.
     /// - Throws: `StorageError` if directory enumeration or file copy fails.
     func importImages(fromDirectory directoryURL: URL) throws -> [ImportedImage] {
-        guard let imagesDirectory else {
-            throw StorageError.directoryNotAvailable
-        }
+        let imagesDirectory = try resolveImageLibraryDirectory()
         
         let fileManager = FileManager.default
         let rootName = directoryURL.lastPathComponent
@@ -171,6 +147,23 @@ actor StorageManager {
         let uniqueSuffix = UUID().uuidString.prefix(6)
         let filename = "screenshot_\(timestamp)_\(uniqueSuffix).png"
         return directory.appendingPathComponent(filename)
+    }
+
+    private func resolveImageLibraryDirectory() throws -> URL {
+        guard let imageLibraryURL = AppSettings.imageLibraryURL() else {
+            throw StorageError.directoryNotAvailable
+        }
+        
+        do {
+            try FileManager.default.createDirectory(
+                at: imageLibraryURL,
+                withIntermediateDirectories: true,
+                attributes: nil
+            )
+            return imageLibraryURL
+        } catch {
+            throw StorageError.copyFailed(error)
+        }
     }
 }
 
