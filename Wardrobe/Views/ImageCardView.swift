@@ -12,7 +12,7 @@ import ImageIO
 struct ImageCardView: View {
     let record: ImageRecord
     let similarity: Double?
-    let thumbnailMaxPixelSize: CGFloat
+    let thumbnailMaxPixelSize: CGFloat = 320
     
     @State private var image: NSImage?
     @State private var loadedThumbnailPixelSize: Int?
@@ -23,8 +23,8 @@ struct ImageCardView: View {
         max(180, Int(thumbnailMaxPixelSize.rounded(.up)))
     }
     
-    private var cacheKey: NSString {
-        "\(record.fileURL.path)#\(requestedThumbnailPixelSize)" as NSString
+    private var cacheKeyString: String {
+        "\(record.fileURL.path)#\(requestedThumbnailPixelSize)"
     }
     
     private static let thumbnailCache: NSCache<NSString, NSImage> = {
@@ -186,8 +186,9 @@ struct ImageCardView: View {
             return
         }
         
-        let key = cacheKey
-        if let cached = Self.thumbnailCache.object(forKey: key) {
+        let keyString = cacheKeyString
+        let cacheLookupKey = NSString(string: keyString)
+        if let cached = Self.thumbnailCache.object(forKey: cacheLookupKey) {
             image = cached
             loadedThumbnailPixelSize = pixelSize
             return
@@ -196,20 +197,22 @@ struct ImageCardView: View {
         loadingTask?.cancel()
         
         let imageURL = record.fileURL
+        let cacheStoreKeyString = keyString
         loadingTask = Task.detached(priority: .userInitiated) {
             guard let nsImage = Self.makeThumbnail(from: imageURL, maxPixelSize: pixelSize) else { return }
             guard !Task.isCancelled else { return }
-            Self.thumbnailCache.setObject(nsImage, forKey: key)
             
             await MainActor.run {
                 guard pixelSize >= self.requestedThumbnailPixelSize else { return }
+                let cacheStoreKey = NSString(string: cacheStoreKeyString)
+                Self.thumbnailCache.setObject(nsImage, forKey: cacheStoreKey)
                 self.image = nsImage
                 self.loadedThumbnailPixelSize = pixelSize
             }
         }
     }
     
-    private static func makeThumbnail(from url: URL, maxPixelSize: Int) -> NSImage? {
+    private nonisolated static func makeThumbnail(from url: URL, maxPixelSize: Int) -> NSImage? {
         let sourceOptions: [CFString: Any] = [
             kCGImageSourceShouldCache: false
         ]
