@@ -29,6 +29,7 @@ struct GalleryView: View {
     @State private var zoomLevel: Double = 200
     @State private var viewMode: GalleryViewMode = .grid
     @State private var isDragTargeted = false
+    @State private var showingDirectoryImporter = false
     
     private var displayImages: [ImageRecord] {
         if searchQuery.isEmpty {
@@ -102,6 +103,13 @@ struct GalleryView: View {
         }
         .sheet(item: $selectedImage) { image in
             ImageDetailView(image: image, onDelete: deleteImage)
+        }
+        .fileImporter(
+            isPresented: $showingDirectoryImporter,
+            allowedContentTypes: [.directory],
+            allowsMultipleSelection: false
+        ) { result in
+            handleDirectoryImport(result: result)
         }
     }
     
@@ -180,6 +188,17 @@ struct GalleryView: View {
     
     private var actionButtons: some View {
         HStack(spacing: 8) {
+            Button {
+                showingDirectoryImporter = true
+            } label: {
+                Image(systemName: "folder.badge.plus")
+                    .font(.system(size: 14))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 28, height: 28)
+            }
+            .buttonStyle(.plain)
+            .help("Import folder")
+            
             Button {
                 // Quick actions
             } label: {
@@ -377,6 +396,69 @@ struct GalleryView: View {
         searchResults = []
     }
     
+    private func handleDirectoryImport(result: Result<[URL], any Error>) {
+        switch result {
+        case .success(let urls):
+            guard let directoryURL = urls.first else { return }
+            importDirectory(directoryURL)
+        case .failure(let error):
+            errorMessage = "Failed to open directory: \(error.localizedDescription)"
+            showingError = true
+        }
+    }
+    
+    private func importDirectory(_ directoryURL: URL) {
+        isProcessing = true
+        
+        Task {
+            do {
+                let importedImages = try await StorageManager.shared.importImages(fromDirectory: directoryURL)
+                guard !importedImages.isEmpty else {
+                    await MainActor.run {
+                        errorMessage = "No image files were found in the selected folder."
+                        showingError = true
+                        isProcessing = false
+                    }
+                    return
+                }
+                
+                for imported in importedImages {
+                    let processed = try await ProcessingService.shared.processImage(at: imported.copiedURL)
+                    
+                    await MainActor.run {
+                        let record = ImageRecord(
+                            filename: imported.copiedURL.lastPathComponent,
+                            fileURL: imported.copiedURL,
+                            extractedText: processed.text.isEmpty ? nil : processed.text,
+                            textEmbedding: processed.embedding,
+                            sourceRelativePath: imported.sourceRelativePath,
+                            sourceTopLevelFolder: imported.sourceTopLevelFolder,
+                            detectedURLs: processed.urls,
+                            smartTags: processed.smartTags,
+                            featurePrintData: processed.featurePrint,
+                            extractedEntities: processed.entities
+                        )
+                        modelContext.insert(record)
+                    }
+                }
+                
+                await MainActor.run {
+                    try? modelContext.save()
+                    isProcessing = false
+                    if !searchQuery.isEmpty {
+                        performSearch()
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    errorMessage = "Failed to import folder: \(error.localizedDescription)"
+                    showingError = true
+                    isProcessing = false
+                }
+            }
+        }
+    }
+    
     private func handleDrop(providers: [NSItemProvider]) {
         guard !providers.isEmpty else { return }
         
@@ -395,6 +477,8 @@ struct GalleryView: View {
                                 fileURL: fileURL,
                                 extractedText: extractedText.isEmpty ? nil : extractedText,
                                 textEmbedding: embedding,
+                                sourceRelativePath: nil,
+                                sourceTopLevelFolder: nil,
                                 detectedURLs: detectedURLs,
                                 smartTags: smartTags,
                                 featurePrintData: featurePrint,
