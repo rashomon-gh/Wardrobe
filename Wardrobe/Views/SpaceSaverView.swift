@@ -74,7 +74,7 @@ struct SpaceSaverView: View {
             }
             Button("Cancel", role: .cancel) { }
         } message: {
-            Text("This will re-encode PNG, TIFF, and BMP screenshots as JPEG (.jpg) to save disk space. The originals cannot be restored afterwards.")
+            Text("This will re-encode PNG, TIFF, and BMP screenshots as JPEG (.jpg) in a separate Compressed folder. Original screenshots remain untouched.")
         }
     }
     
@@ -242,7 +242,7 @@ struct SpaceSaverView: View {
             Text("\(compressibleImages.count) compressible images in library")
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
-            Text("Space Saver re-encodes PNG, TIFF, and BMP files as JPEG (.jpg). It keeps the original file only when JPEG would not save space.")
+            Text("Space Saver writes compressed JPEG copies to a separate Compressed folder and keeps your original PNG, TIFF, and BMP screenshots.")
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
             
