@@ -7,13 +7,31 @@
 
 import SwiftUI
 import AppKit
+import ImageIO
 
 struct ImageCardView: View {
     let record: ImageRecord
     let similarity: Double?
+    let thumbnailMaxPixelSize: CGFloat
     
     @State private var image: NSImage?
+    @State private var loadedThumbnailPixelSize: Int?
+    @State private var loadingTask: Task<Void, Never>?
     @State private var isHovered = false
+    
+    private var requestedThumbnailPixelSize: Int {
+        max(180, Int(thumbnailMaxPixelSize.rounded(.up)))
+    }
+    
+    private var cacheKey: NSString {
+        "\(record.fileURL.path)#\(requestedThumbnailPixelSize)" as NSString
+    }
+    
+    private static let thumbnailCache: NSCache<NSString, NSImage> = {
+        let cache = NSCache<NSString, NSImage>()
+        cache.countLimit = 500
+        return cache
+    }()
     
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -31,6 +49,13 @@ struct ImageCardView: View {
             .padding(8)
         }
         .onAppear(perform: loadImage)
+        .onChange(of: requestedThumbnailPixelSize) { _, newSize in
+            loadImageIfNeeded(for: newSize)
+        }
+        .onDisappear {
+            loadingTask?.cancel()
+            loadingTask = nil
+        }
         .onHover { hovering in
             withAnimation(.easeInOut(duration: 0.15)) {
                 isHovered = hovering
@@ -153,16 +178,59 @@ struct ImageCardView: View {
     }
     
     private func loadImage() {
-        guard image == nil else { return }
-        let url = record.fileURL
+        loadImageIfNeeded(for: requestedThumbnailPixelSize)
+    }
+    
+    private func loadImageIfNeeded(for pixelSize: Int) {
+        if let loadedThumbnailPixelSize, loadedThumbnailPixelSize >= pixelSize, image != nil {
+            return
+        }
         
-        Task.detached(priority: .userInitiated) {
-            guard let data = try? Data(contentsOf: url),
-                  let nsImage = NSImage(data: data) else { return }
+        let key = cacheKey
+        if let cached = Self.thumbnailCache.object(forKey: key) {
+            image = cached
+            loadedThumbnailPixelSize = pixelSize
+            return
+        }
+        
+        loadingTask?.cancel()
+        
+        let imageURL = record.fileURL
+        loadingTask = Task.detached(priority: .userInitiated) {
+            guard let nsImage = Self.makeThumbnail(from: imageURL, maxPixelSize: pixelSize) else { return }
+            Self.thumbnailCache.setObject(nsImage, forKey: key)
+            
             await MainActor.run {
                 self.image = nsImage
+                self.loadedThumbnailPixelSize = pixelSize
             }
         }
+    }
+    
+    private static func makeThumbnail(from url: URL, maxPixelSize: Int) -> NSImage? {
+        let sourceOptions: [CFString: Any] = [
+            kCGImageSourceShouldCache: false
+        ]
+        
+        guard let imageSource = CGImageSourceCreateWithURL(url as CFURL, sourceOptions as CFDictionary) else {
+            return nil
+        }
+        
+        let thumbnailOptions: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceShouldCacheImmediately: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxPixelSize
+        ]
+        
+        guard let thumbnail = CGImageSourceCreateThumbnailAtIndex(imageSource, 0, thumbnailOptions as CFDictionary) else {
+            return nil
+        }
+        
+        return NSImage(
+            cgImage: thumbnail,
+            size: NSSize(width: thumbnail.width, height: thumbnail.height)
+        )
     }
     
     private func timeAgoString(from date: Date) -> String {

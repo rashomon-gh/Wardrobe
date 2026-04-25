@@ -263,7 +263,8 @@ struct GalleryView: View {
                 ForEach(images, id: \.id) { image in
                     ImageCardView(
                         record: image,
-                        similarity: searchResults.first(where: { $0.record.id == image.id })?.similarity
+                        similarity: searchResults.first(where: { $0.record.id == image.id })?.similarity,
+                        thumbnailMaxPixelSize: zoomLevel * 2
                     )
                     .onTapGesture {
                         selectedImage = image
