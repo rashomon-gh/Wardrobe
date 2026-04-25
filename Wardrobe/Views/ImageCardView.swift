@@ -29,12 +29,17 @@ struct ImageCardView: View {
                 }
             }
             .padding(8)
+            .contentShape(Rectangle())
         }
         .onAppear(perform: loadImage)
         .onHover { hovering in
             withAnimation(.easeInOut(duration: 0.15)) {
                 isHovered = hovering
             }
+        }
+        .onKeyPress(.space) {
+            QuickLookPreviewer.shared.preview(urls: [record.fileURL])
+            return .handled
         }
     }
 
@@ -69,6 +74,7 @@ struct ImageCardView: View {
                 )
         }
         .buttonStyle(.plain)
+        .contentShape(Capsule())
         .help("Quick Look (Space)")
     }
     
