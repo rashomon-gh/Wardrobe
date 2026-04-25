@@ -10,6 +10,7 @@ import Foundation
 enum AppSettings {
     static let customImageLibraryPathKey = "customImageLibraryPath"
     private static let defaultImageLibraryRelativePath = "Wardrobe/Images"
+    private static let compressedImageFolderName = "Compressed"
     
     static func imageLibraryURL(
         fileManager: FileManager = .default,
@@ -26,6 +27,14 @@ enum AppSettings {
         }
         
         return documentsURL.appendingPathComponent(defaultImageLibraryRelativePath, isDirectory: true)
+    }
+
+    static func compressedImageLibraryURL(
+        fileManager: FileManager = .default,
+        userDefaults: UserDefaults = .standard
+    ) -> URL? {
+        imageLibraryURL(fileManager: fileManager, userDefaults: userDefaults)?
+            .appendingPathComponent(compressedImageFolderName, isDirectory: true)
     }
     
     static func setCustomImageLibraryURL(

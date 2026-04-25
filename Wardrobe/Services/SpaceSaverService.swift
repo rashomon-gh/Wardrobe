@@ -62,8 +62,9 @@ actor SpaceSaverService {
     
     enum SpaceSaverError: Error {
         case imageLoadFailed
-        case bitmapCreationFailed
         case jpegEncodingFailed
+        case compressedDirectoryUnavailable
+        case compressedDirectoryCreationFailed(Error)
     }
     
     /// The result of a successful compression operation.
@@ -77,7 +78,7 @@ actor SpaceSaverService {
         var saved: Int64 { oldBytes - newBytes }
     }
     
-    /// Analyzes an image on disk and attempts to rewrite it using lossy JPEG compression.
+    /// Analyzes an image on disk and attempts to re-encode it using lossy JPEG compression.
     ///
     /// If the newly generated JPEG is larger than the original uncompressed file, the operation
     /// is discarded and the original file is kept to ensure no disk space is wasted.
@@ -109,21 +110,41 @@ actor SpaceSaverService {
             return CompressionResult(newURL: url, oldBytes: oldBytes, newBytes: oldBytes)
         }
         
-        let newURL = url
-            .deletingPathExtension()
-            .appendingPathExtension("jpg")
+        let compressedDirectory = try resolveCompressedImageDirectory()
+        let newURL = nextCompressedDestinationURL(for: url, in: compressedDirectory)
         
         try jpegData.write(to: newURL, options: .atomic)
-        
-        if newURL != url {
-            try? FileManager.default.removeItem(at: url)
-        }
         
         return CompressionResult(
             newURL: newURL,
             oldBytes: oldBytes,
             newBytes: Int64(jpegData.count)
         )
+    }
+
+    private func resolveCompressedImageDirectory() throws -> URL {
+        guard let compressedLibraryURL = AppSettings.compressedImageLibraryURL() else {
+            throw SpaceSaverError.compressedDirectoryUnavailable
+        }
+
+        do {
+            try FileManager.default.createDirectory(
+                at: compressedLibraryURL,
+                withIntermediateDirectories: true,
+                attributes: nil
+            )
+            return compressedLibraryURL
+        } catch {
+            throw SpaceSaverError.compressedDirectoryCreationFailed(error)
+        }
+    }
+
+    private func nextCompressedDestinationURL(for sourceURL: URL, in directory: URL) -> URL {
+        let baseName = sourceURL.deletingPathExtension().lastPathComponent
+        let timestamp = Int(Date().timeIntervalSince1970)
+        let uniqueSuffix = UUID().uuidString.prefix(6)
+        let filename = "\(baseName)_compressed_\(timestamp)_\(uniqueSuffix).jpg"
+        return directory.appendingPathComponent(filename)
     }
     
     static func fileSize(at url: URL) -> Int64 {
