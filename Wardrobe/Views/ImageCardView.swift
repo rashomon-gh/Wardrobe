@@ -11,6 +11,7 @@ import AppKit
 struct ImageCardView: View {
     let record: ImageRecord
     let similarity: Double?
+    let isSelected: Bool
     
     @State private var image: NSImage?
     @State private var isHovered = false
@@ -131,7 +132,16 @@ struct ImageCardView: View {
             }
             .overlay(
                 RoundedRectangle(cornerRadius: 10)
-                    .stroke(isHovered ? Color.accentColor : Color.clear, lineWidth: 2)
+                    .stroke(
+                        isSelected 
+                            ? Color.accentColor 
+                            : (isHovered ? Color.accentColor.opacity(0.5) : Color.clear), 
+                        lineWidth: isSelected ? 3 : 2
+                    )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color.accentColor.opacity(isSelected ? 0.2 : 0))
             )
         }
         .aspectRatio(4/3, contentMode: .fit)
