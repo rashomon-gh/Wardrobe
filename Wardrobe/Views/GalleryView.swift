@@ -26,10 +26,12 @@ struct GalleryView: View {
     @State private var errorMessage: String?
     @State private var showingError = false
     @State private var selectedImage: ImageRecord?
+    @State private var selectedImageID: ImageRecord.ID?
     @State private var zoomLevel: Double = 200
     @State private var viewMode: GalleryViewMode = .grid
     @State private var isDragTargeted = false
     @State private var showingDirectoryImporter = false
+    @Environment(\.layoutDirection) private var layoutDirection
     
     private var displayImages: [ImageRecord] {
         if searchQuery.isEmpty {
@@ -245,6 +247,15 @@ struct GalleryView: View {
                 }
                 .padding(24)
             }
+            .focusable()
+            .focusEffectDisabled()
+            .onMoveCommand { direction in
+                moveSelection(direction: direction)
+            }
+            .onKeyPress(.return) {
+                openSelectedImage()
+                return .handled
+            }
         }
     }
     
@@ -263,9 +274,12 @@ struct GalleryView: View {
                 ForEach(images, id: \.id) { image in
                     ImageCardView(
                         record: image,
-                        similarity: searchResults.first(where: { $0.record.id == image.id })?.similarity
+                        similarity: searchResults.first(where: { $0.record.id == image.id })?.similarity,
+                        isSelected: selectedImageID == image.id
                     )
+                    .id(image.id)
                     .onTapGesture {
+                        selectedImageID = image.id
                         selectedImage = image
                     }
                     .contextMenu {
@@ -542,6 +556,46 @@ struct GalleryView: View {
             errorMessage = "Failed to open folder: \(error.localizedDescription)"
             showingError = true
         }
+    }
+    
+    private func moveSelection(direction: MoveCommandDirection) {
+        guard let currentID = selectedImageID else {
+            selectedImageID = displayImages.first?.id
+            return
+        }
+        
+        guard let currentIndex = displayImages.firstIndex(where: { $0.id == currentID }) else {
+            selectedImageID = displayImages.first?.id
+            return
+        }
+        
+        let newIndex: Int
+        let estimatedColumns = max(1, Int(800 / zoomLevel))
+        
+        switch direction {
+        case .left:
+            newIndex = currentIndex - 1
+        case .right:
+            newIndex = currentIndex + 1
+        case .up:
+            newIndex = currentIndex - estimatedColumns
+        case .down:
+            newIndex = currentIndex + estimatedColumns
+        default:
+            return
+        }
+        
+        if newIndex >= 0 && newIndex < displayImages.count {
+            selectedImageID = displayImages[newIndex].id
+        }
+    }
+    
+    private func openSelectedImage() {
+        guard let selectedID = selectedImageID,
+              let image = displayImages.first(where: { $0.id == selectedID }) else {
+            return
+        }
+        selectedImage = image
     }
 }
 

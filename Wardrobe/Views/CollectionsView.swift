@@ -494,7 +494,7 @@ struct CollectionsView: View {
                         spacing: 12
                     ) {
                         ForEach(images, id: \.id) { image in
-                            ImageCardView(record: image, similarity: nil)
+                            ImageCardView(record: image, similarity: nil, isSelected: false)
                                 .onTapGesture {
                                     previewImage = image
                                 }
