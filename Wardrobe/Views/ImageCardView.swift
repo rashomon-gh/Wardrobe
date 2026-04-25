@@ -12,7 +12,7 @@ import ImageIO
 struct ImageCardView: View {
     let record: ImageRecord
     let similarity: Double?
-    let thumbnailMaxPixelSize: CGFloat = 320
+    let thumbnailMaxPixelSize: CGFloat
     
     @State private var image: NSImage?
     @State private var loadedThumbnailPixelSize: Int?
@@ -32,6 +32,16 @@ struct ImageCardView: View {
         cache.countLimit = 500
         return cache
     }()
+
+    init(
+        record: ImageRecord,
+        similarity: Double?,
+        thumbnailMaxPixelSize: CGFloat = 320
+    ) {
+        self.record = record
+        self.similarity = similarity
+        self.thumbnailMaxPixelSize = thumbnailMaxPixelSize
+    }
     
     var body: some View {
         ZStack(alignment: .topTrailing) {
