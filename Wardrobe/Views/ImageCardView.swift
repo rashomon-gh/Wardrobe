@@ -198,9 +198,11 @@ struct ImageCardView: View {
         let imageURL = record.fileURL
         loadingTask = Task.detached(priority: .userInitiated) {
             guard let nsImage = Self.makeThumbnail(from: imageURL, maxPixelSize: pixelSize) else { return }
+            guard !Task.isCancelled else { return }
             Self.thumbnailCache.setObject(nsImage, forKey: key)
             
             await MainActor.run {
+                guard pixelSize >= self.requestedThumbnailPixelSize else { return }
                 self.image = nsImage
                 self.loadedThumbnailPixelSize = pixelSize
             }
