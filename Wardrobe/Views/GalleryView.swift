@@ -37,6 +37,10 @@ struct GalleryView: View {
         }
         return searchResults.map { $0.record }
     }
+
+    private var similarityByImageID: [UUID: Double] {
+        Dictionary(uniqueKeysWithValues: searchResults.map { ($0.record.id, $0.similarity) })
+    }
     
     private var groupedImages: [(key: String, value: [ImageRecord])] {
         let calendar = Calendar.current
@@ -261,56 +265,65 @@ struct GalleryView: View {
                 spacing: 12
             ) {
                 ForEach(images, id: \.id) { image in
-                    ImageCardView(
-                        record: image,
-                        similarity: searchResults.first(where: { $0.record.id == image.id })?.similarity,
-                        thumbnailMaxPixelSize: zoomLevel * 2
-                    )
-                    .onTapGesture {
-                        selectedImage = image
-                    }
-                    .contextMenu {
-                        Button {
-                            QuickLookPreviewer.shared.preview(urls: [image.fileURL])
-                        } label: {
-                            Label("Quick Look", systemImage: "eye")
-                        }
-                        .keyboardShortcut(.space, modifiers: [])
-                        
-                        Button {
-                            NSWorkspace.shared.activateFileViewerSelecting([image.fileURL])
-                        } label: {
-                            Label("Show in Finder", systemImage: "folder")
-                        }
-                        
-                        if !allCollections.isEmpty {
-                            Menu {
-                                ForEach(allCollections) { collection in
-                                    let isMember = collection.images.contains { $0.id == image.id }
-                                    Button {
-                                        toggleMembership(image: image, collection: collection)
-                                    } label: {
-                                        Label(
-                                            collection.name,
-                                            systemImage: isMember ? "checkmark.circle.fill" : collection.iconName
-                                        )
-                                    }
-                                }
-                            } label: {
-                                Label("Add to Collection", systemImage: "folder.badge.plus")
-                            }
-                        }
-                        
-                        Divider()
-                        
-                        Button(role: .destructive) {
-                            deleteImage(image)
-                        } label: {
-                            Label("Delete", systemImage: "trash")
-                        }
-                    }
+                    imageCard(for: image)
                 }
             }
+        }
+    }
+
+    private func imageCard(for image: ImageRecord) -> some View {
+        ImageCardView(
+            record: image,
+            similarity: similarityByImageID[image.id],
+            thumbnailMaxPixelSize: zoomLevel * 2
+        )
+        .onTapGesture {
+            selectedImage = image
+        }
+        .contextMenu {
+            imageContextMenu(for: image)
+        }
+    }
+
+    @ViewBuilder
+    private func imageContextMenu(for image: ImageRecord) -> some View {
+        Button {
+            QuickLookPreviewer.shared.preview(urls: [image.fileURL])
+        } label: {
+            Label("Quick Look", systemImage: "eye")
+        }
+        .keyboardShortcut(.space, modifiers: [])
+
+        Button {
+            NSWorkspace.shared.activateFileViewerSelecting([image.fileURL])
+        } label: {
+            Label("Show in Finder", systemImage: "folder")
+        }
+
+        if !allCollections.isEmpty {
+            Menu {
+                ForEach(allCollections) { collection in
+                    let isMember = collection.images.contains { $0.id == image.id }
+                    Button {
+                        toggleMembership(image: image, collection: collection)
+                    } label: {
+                        Label(
+                            collection.name,
+                            systemImage: isMember ? "checkmark.circle.fill" : collection.iconName
+                        )
+                    }
+                }
+            } label: {
+                Label("Add to Collection", systemImage: "folder.badge.plus")
+            }
+        }
+
+        Divider()
+
+        Button(role: .destructive) {
+            deleteImage(image)
+        } label: {
+            Label("Delete", systemImage: "trash")
         }
     }
     
