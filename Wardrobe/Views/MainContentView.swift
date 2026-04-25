@@ -39,6 +39,8 @@ struct MainContentView: View {
             SpaceSaverView()
         case .duplicateFinder:
             DuplicateFinderView()
+        case .settings:
+            SettingsView()
         }
     }
 }

@@ -42,6 +42,10 @@ struct WardrobeApp: App {
                 .modelContainer(modelContainer)
         }
         .menuBarExtraStyle(.window)
+        
+        Settings {
+            SettingsView()
+        }
     }
 }
 
