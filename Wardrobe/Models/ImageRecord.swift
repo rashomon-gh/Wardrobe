@@ -31,6 +31,10 @@ final class ImageRecord {
     var customTags: [String] = []
     /// User-assigned notes or descriptions.
     var notes: String?
+    /// Relative path of the source file inside a user-imported directory.
+    var sourceRelativePath: String?
+    /// Top-level folder name from the source import directory, used for folder categories.
+    var sourceTopLevelFolder: String?
     /// HTTP/HTTPS URLs detected within the OCR text via `NSDataDetector`.
     var detectedURLs: [String] = []
     /// Automated tags generated via Apple's Vision Image Classification framework.
@@ -50,6 +54,8 @@ final class ImageRecord {
     ///   - textEmbedding: Semantic vector array.
     ///   - customTags: User tags.
     ///   - notes: User notes.
+    ///   - sourceRelativePath: Relative source path in imported directory.
+    ///   - sourceTopLevelFolder: Top-level source folder name.
     ///   - detectedURLs: Parsed hyperlinks.
     ///   - smartTags: Vision image classifications.
     ///   - featurePrintData: Vision feature print for duplicate matching.
@@ -63,6 +69,8 @@ final class ImageRecord {
         textEmbedding: [Double]? = nil,
         customTags: [String] = [],
         notes: String? = nil,
+        sourceRelativePath: String? = nil,
+        sourceTopLevelFolder: String? = nil,
         detectedURLs: [String] = [],
         smartTags: [String] = [],
         featurePrintData: Data? = nil,
@@ -76,6 +84,8 @@ final class ImageRecord {
         self.textEmbedding = textEmbedding
         self.customTags = customTags
         self.notes = notes
+        self.sourceRelativePath = sourceRelativePath
+        self.sourceTopLevelFolder = sourceTopLevelFolder
         self.detectedURLs = detectedURLs
         self.smartTags = smartTags
         self.featurePrintData = featurePrintData

@@ -15,18 +15,53 @@ struct CollectionsView: View {
     @Query(sort: \ImageCollection.dateCreated, order: .reverse) private var userCollections: [ImageCollection]
     
     @State private var selectedSmart: SmartCollection?
+    @State private var selectedFolderCategory: String?
     @State private var selectedUser: ImageCollection?
     @State private var previewImage: ImageRecord?
     @State private var showingNewCollectionSheet = false
     
+    private struct FolderCategory: Identifiable {
+        let name: String
+        let images: [ImageRecord]
+        
+        var id: String { name }
+        var count: Int { images.count }
+    }
+    
     private func imagesIn(_ collection: SmartCollection) -> [ImageRecord] {
         allImages.filter { collection.matches(date: $0.dateAdded) }
+    }
+    
+    private var folderCategories: [FolderCategory] {
+        let grouped = Dictionary(grouping: allImages) { image -> String? in
+            if let folder = image.sourceTopLevelFolder, !folder.isEmpty {
+                return folder
+            }
+            if let relativePath = image.sourceRelativePath, !relativePath.isEmpty {
+                return relativePath.split(separator: "/").first.map(String.init)
+            }
+            return nil
+        }
+        
+        return grouped
+            .compactMap { key, value in
+                guard let key else { return nil }
+                return FolderCategory(name: key, images: value.sorted { $0.dateAdded > $1.dateAdded })
+            }
+            .sorted { lhs, rhs in
+                if lhs.count == rhs.count {
+                    return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
+                }
+                return lhs.count > rhs.count
+            }
     }
     
     var body: some View {
         VStack(spacing: 0) {
             if let smart = selectedSmart {
                 smartCollectionDetailView(for: smart)
+            } else if let folderName = selectedFolderCategory {
+                folderCategoryDetailView(for: folderName)
             } else if let user = selectedUser {
                 userCollectionDetailView(for: user)
             } else {
@@ -77,6 +112,7 @@ struct CollectionsView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
                     smartCollectionsSection
+                    folderCategoriesSection
                     userCollectionsSection
                 }
                 .padding(24)
@@ -152,12 +188,53 @@ struct CollectionsView: View {
         }
     }
     
+    private var folderCategoriesSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("FOLDER CATEGORIES")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.tertiary)
+                    .tracking(0.5)
+                Spacer()
+            }
+            
+            if folderCategories.isEmpty {
+                HStack(spacing: 10) {
+                    Image(systemName: "folder")
+                        .font(.system(size: 16))
+                        .foregroundStyle(.tertiary)
+                    Text("Import a directory to generate categories that respect source folders.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                }
+                .padding(14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color.secondary.opacity(0.06))
+                )
+            } else {
+                LazyVGrid(
+                    columns: [GridItem(.adaptive(minimum: 200, maximum: 260), spacing: 16)],
+                    spacing: 16
+                ) {
+                    ForEach(folderCategories) { category in
+                        folderCategoryTile(category)
+                    }
+                }
+            }
+        }
+    }
+    
     private func smartCollectionTile(_ collection: SmartCollection) -> some View {
         let images = imagesIn(collection)
         let count = images.count
         
         return Button {
             selectedSmart = collection
+            selectedFolderCategory = nil
+            selectedUser = nil
         } label: {
             VStack(alignment: .leading, spacing: 0) {
                 ZStack(alignment: .bottomLeading) {
@@ -205,6 +282,8 @@ struct CollectionsView: View {
         
         return Button {
             selectedUser = collection
+            selectedFolderCategory = nil
+            selectedSmart = nil
         } label: {
             VStack(alignment: .leading, spacing: 0) {
                 ZStack {
@@ -251,6 +330,56 @@ struct CollectionsView: View {
         }
     }
     
+    private func folderCategoryTile(_ category: FolderCategory) -> some View {
+        let count = category.images.count
+        let themeColor = colorForFolderCategory(category.name)
+        
+        return Button {
+            selectedFolderCategory = category.name
+            selectedSmart = nil
+            selectedUser = nil
+        } label: {
+            VStack(alignment: .leading, spacing: 0) {
+                ZStack {
+                    LinearGradient(
+                        colors: [themeColor, themeColor.opacity(0.75)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                    .overlay(
+                        Image(systemName: "folder.fill")
+                            .font(.system(size: 44, weight: .regular))
+                            .foregroundStyle(.white.opacity(0.9))
+                    )
+                }
+                .frame(height: 120)
+                .clipShape(UnevenRoundedRectangle(topLeadingRadius: 10, topTrailingRadius: 10))
+                
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(category.name)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.primary)
+                    Text("\(count) screenshot\(count == 1 ? "" : "s")")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+            }
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color(nsColor: .controlBackgroundColor))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(Color.secondary.opacity(0.15), lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+        }
+        .buttonStyle(.plain)
+    }
+    
     @ViewBuilder
     private func smartCollectionDetailView(for collection: SmartCollection) -> some View {
         let images = imagesIn(collection)
@@ -286,6 +415,23 @@ struct CollectionsView: View {
                     Label("Remove from \(collection.name)", systemImage: "minus.circle")
                 }
             }
+        )
+    }
+    
+    @ViewBuilder
+    private func folderCategoryDetailView(for folderName: String) -> some View {
+        let images = folderCategories.first(where: { $0.name == folderName })?.images ?? []
+        let folderColor = colorForFolderCategory(folderName)
+        
+        collectionDetailShell(
+            title: folderName,
+            subtitle: "\(images.count) screenshot\(images.count == 1 ? "" : "s")",
+            icon: "folder.fill",
+            gradient: [folderColor, folderColor.opacity(0.7)],
+            onBack: { selectedFolderCategory = nil },
+            images: images,
+            emptyMessage: "Images imported under this source folder appear here automatically.",
+            imageContextMenu: { _ in EmptyView() }
         )
     }
     
@@ -406,6 +552,15 @@ struct CollectionsView: View {
         Task.detached {
             try? FileManager.default.removeItem(at: url)
         }
+    }
+    
+    private func colorForFolderCategory(_ name: String) -> Color {
+        let scalarSum = name.unicodeScalars.reduce(0) { partialResult, scalar in
+            partialResult + Int(scalar.value)
+        }
+        let palette = CollectionPalette.presets
+        let index = scalarSum % palette.count
+        return Color(hex: palette[index].hex) ?? .accentColor
     }
 }
 

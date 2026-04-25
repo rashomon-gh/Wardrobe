@@ -8,6 +8,13 @@
 import Foundation
 import UniformTypeIdentifiers
 
+struct ImportedImage {
+    let originalURL: URL
+    let copiedURL: URL
+    let sourceRelativePath: String
+    let sourceTopLevelFolder: String?
+}
+
 /// A background actor responsible for safely managing the local file system.
 ///
 /// `StorageManager` ensures that images dropped into the app are safely copied
@@ -87,6 +94,69 @@ actor StorageManager {
         return destinationURL
     }
     
+    /// Recursively imports all image files from a directory into the app-managed library,
+    /// preserving each file's relative folder hierarchy under an import-specific root.
+    ///
+    /// - Parameter directoryURL: User-selected source directory.
+    /// - Returns: Imported image descriptors including copied file URL and source folder metadata.
+    /// - Throws: `StorageError` if directory enumeration or file copy fails.
+    func importImages(fromDirectory directoryURL: URL) throws -> [ImportedImage] {
+        guard let imagesDirectory else {
+            throw StorageError.directoryNotAvailable
+        }
+        
+        let fileManager = FileManager.default
+        let rootName = directoryURL.lastPathComponent
+        let importFolderName = "import_\(Int(Date().timeIntervalSince1970))_\(UUID().uuidString.prefix(6))_\(rootName)"
+        let importRootURL = imagesDirectory.appendingPathComponent(importFolderName, isDirectory: true)
+        try fileManager.createDirectory(at: importRootURL, withIntermediateDirectories: true, attributes: nil)
+        
+        guard let enumerator = fileManager.enumerator(
+            at: directoryURL,
+            includingPropertiesForKeys: [.isDirectoryKey, .contentTypeKey],
+            options: [.skipsHiddenFiles, .skipsPackageDescendants]
+        ) else {
+            throw StorageError.enumerationFailed(directoryURL.path)
+        }
+        
+        var importedImages: [ImportedImage] = []
+        
+        for case let itemURL as URL in enumerator {
+            let resourceValues = try itemURL.resourceValues(forKeys: [.isDirectoryKey, .contentTypeKey])
+            if resourceValues.isDirectory == true {
+                continue
+            }
+            
+            guard let contentType = resourceValues.contentType, contentType.conforms(to: .image) else {
+                continue
+            }
+            
+            let relativePath = itemURL.path.replacingOccurrences(of: directoryURL.path + "/", with: "")
+            let destinationURL = importRootURL.appendingPathComponent(relativePath)
+            let destinationDirectory = destinationURL.deletingLastPathComponent()
+            try fileManager.createDirectory(at: destinationDirectory, withIntermediateDirectories: true, attributes: nil)
+            try fileManager.copyItem(at: itemURL, to: destinationURL)
+            
+            let relativeComponents = relativePath.split(separator: "/")
+            let topLevelFolder: String?
+            if relativeComponents.count > 1 {
+                topLevelFolder = String(relativeComponents[0])
+            } else {
+                topLevelFolder = rootName
+            }
+            importedImages.append(
+                ImportedImage(
+                    originalURL: itemURL,
+                    copiedURL: destinationURL,
+                    sourceRelativePath: relativePath,
+                    sourceTopLevelFolder: topLevelFolder
+                )
+            )
+        }
+        
+        return importedImages
+    }
+    
     /// Permanently deletes an image file from local disk storage.
     ///
     /// - Parameter url: The absolute URL of the file to remove.
@@ -108,6 +178,7 @@ enum StorageError: Error, LocalizedError {
     case directoryNotAvailable
     case fileNotFound
     case copyFailed(Error)
+    case enumerationFailed(String)
     case unknown
     
     var errorDescription: String? {
@@ -118,6 +189,8 @@ enum StorageError: Error, LocalizedError {
             return "Image file not found"
         case .copyFailed(let error):
             return "Failed to copy image: \(error.localizedDescription)"
+        case .enumerationFailed(let path):
+            return "Failed to enumerate directory: \(path)"
         case .unknown:
             return "An unknown error occurred"
         }
