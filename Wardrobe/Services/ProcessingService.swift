@@ -68,7 +68,11 @@ actor ProcessingService {
     
     func generateFeaturePrint(at url: URL) async throws -> Data? {
         try await withCheckedThrowingContinuation { continuation in
+            var hasResumed = false
             let request = VNGenerateImageFeaturePrintRequest { request, error in
+                guard !hasResumed else { return }
+                hasResumed = true
+                
                 if let error = error {
                     continuation.resume(throwing: ProcessingError.featurePrintFailed(error))
                     return
@@ -92,6 +96,8 @@ actor ProcessingService {
                     let handler = VNImageRequestHandler(url: url)
                     try handler.perform([request])
                 } catch {
+                    guard !hasResumed else { return }
+                    hasResumed = true
                     continuation.resume(throwing: ProcessingError.featurePrintFailed(error))
                 }
             }
@@ -104,7 +110,11 @@ actor ProcessingService {
     
     func classifyImage(at url: URL, maxTags: Int = 6, minConfidence: Float = 0.3) async throws -> [String] {
         try await withCheckedThrowingContinuation { continuation in
+            var hasResumed = false
             let request = VNClassifyImageRequest { request, error in
+                guard !hasResumed else { return }
+                hasResumed = true
+                
                 if let error = error {
                     continuation.resume(throwing: ProcessingError.classificationFailed(error))
                     return
@@ -128,6 +138,8 @@ actor ProcessingService {
                     let handler = VNImageRequestHandler(url: url)
                     try handler.perform([request])
                 } catch {
+                    guard !hasResumed else { return }
+                    hasResumed = true
                     continuation.resume(throwing: ProcessingError.classificationFailed(error))
                 }
             }
@@ -236,7 +248,11 @@ actor ProcessingService {
     
     private func performOCR(at url: URL) async throws -> String {
         return try await withCheckedThrowingContinuation { continuation in
+            var hasResumed = false
             let request = VNRecognizeTextRequest { request, error in
+                guard !hasResumed else { return }
+                hasResumed = true
+                
                 if let error = error {
                     continuation.resume(throwing: ProcessingError.ocrFailed(error))
                     return
@@ -263,6 +279,8 @@ actor ProcessingService {
                     let handler = VNImageRequestHandler(url: url)
                     try handler.perform([request])
                 } catch {
+                    guard !hasResumed else { return }
+                    hasResumed = true
                     continuation.resume(throwing: ProcessingError.ocrFailed(error))
                 }
             }
